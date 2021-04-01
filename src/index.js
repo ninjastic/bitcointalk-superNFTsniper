@@ -2,6 +2,8 @@ const axios = require('axios');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
 const cheerio = require('cheerio');
+const fs = require('fs-extra');
+const path = require('path');
 
 const settings = require('../settings.json')
 
@@ -22,7 +24,7 @@ let FINISHED = true;
 let PROCESSING_REQUEST = false;
 
 const queue = () => {
-    setInterval(() => {
+    setInterval(() => { 
         Promise.all(REQUESTS.map((request, index) => {
             REQUESTS.splice(index, 1);
 
@@ -52,6 +54,19 @@ const queue = () => {
             }, INTERVAL_MS);
         }));
     }, 1000)
+}
+
+const logPurchase = async (text) => {
+    const filePath = path.join(__dirname, '..', 'purchases.txt');
+    const exists = await fs.pathExists(filePath);
+
+    if (!exists) {
+        await fs.writeFile(filePath, '');
+    }
+
+    const file = await fs.readFile(filePath);
+    
+    await fs.writeFile(filePath, `${file}\n${text}`);
 }
 
 const authenticate = async () => {
@@ -135,6 +150,7 @@ const snipe = async (listing) => {
     if (error) {
         console.log(`> Errored: ${error}`);
     } else if (bought) {
+        logPurchase(`${listing.name}, ${listing.price}`);
         console.log(bought);
     }
 }
@@ -143,12 +159,18 @@ const snipe = async (listing) => {
     console.log('Authenticating...');
     const authenticated = await authenticate();
 
-    console.log('Requesting fix for sesc code...')
-    await api.get('/fnft.php?buyc=999999&amp;r=9&amp;p=9999&amp;s=18321&am;sesc=XXXXXXXXXX');
-
     if (!authenticated) {
         process.exit();
     }
+
+    console.log('Requesting fix for sesc code...')
+    await api.get('/fnft.php?buyc=999999&amp;r=9&amp;p=9999&amp;s=18321&am;sesc=XXXXXXXXXX');
+
+    const response = await api.get('/fnft.php');
+    const $ = cheerio.load(response.data);
+    const balance = $.html().match(/You have \d+ BTC/);
+
+    console.log(balance[0])
 
     setInterval(async () => {
         if (!FINISHED) return;

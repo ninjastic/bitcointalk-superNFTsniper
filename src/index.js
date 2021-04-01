@@ -178,11 +178,13 @@ const snipe = async (listing) => {
 
     Object.keys(settings.rules).map(key => {
         if (Number(balance[1]) < settings.rules[key]) {
-            console.log(`Alert: You can't buy any ${key} NFT for <= ${settings.rules[key]} BTC because of your lower balance.`)
+            console.log(`Alert: You can't buy any ${key} NFT for <= ${settings.rules[key]} BTC because of your low balance.`)
         }
     })
 
     setInterval(async () => {
+        if (REQUESTS.length === 0) FINISHED = true;
+        
         if (!FINISHED) return;
         FINISHED = false;
 
@@ -199,8 +201,6 @@ const snipe = async (listing) => {
                 });
             })
         );
-
-        FINISHED = true;
     }, 5000);
 
     queue();

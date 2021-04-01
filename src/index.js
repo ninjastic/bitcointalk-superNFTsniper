@@ -122,15 +122,20 @@ const checkMarketForMatches = async () => {
         const linkRegex = html.match(/\[<a href="(.*)">Buy<\/a>/);
         const link = linkRegex && linkRegex[1];
 
-        if (price > settings.targetPrice) {
-            return null;
-        }
+        const level = name.match(/.+(\-.+)$/)[1].replace('-', '');
 
-        return {
-            name,
-            price,
-            link
+        if (
+            (settings.rules[level] && settings.rules[level] >= price) ||
+            settings.rules.ALL >= price
+        ) {
+            return {
+                name,
+                price,
+                link
+            };
         };
+
+        return null;
     }).filter(element => element);
 
     return listingMatches;
@@ -150,7 +155,7 @@ const snipe = async (listing) => {
     if (error) {
         console.log(`> Errored: ${error}`);
     } else if (bought) {
-        logPurchase(`${listing.name}, ${listing.price}`);
+        logPurchase(`${listing.name},${listing.price}`);
         console.log(bought);
     }
 }
@@ -168,9 +173,14 @@ const snipe = async (listing) => {
 
     const response = await api.get('/fnft.php');
     const $ = cheerio.load(response.data);
-    const balance = $.html().match(/You have \d+ BTC/);
-
+    const balance = $.html().match(/You have (\d+) BTC/);
     console.log(balance[0])
+
+    Object.keys(settings.rules).map(key => {
+        if (Number(balance[1]) < settings.rules[key]) {
+            console.log(`Alert: You can't buy any ${key} NFT for <= ${settings.rules[key]} BTC because of your lower balance.`)
+        }
+    })
 
     setInterval(async () => {
         if (!FINISHED) return;

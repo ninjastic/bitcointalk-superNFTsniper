@@ -2,5 +2,15 @@
     "username": "satoshi",
     "password": "craigw2000",
     "captchaCode": "abcdefg",
-    "targetPrice": 10
+    "rules": {
+        "ALL": 2,
+        "IV": 50,
+        "V": 60,
+        "VI": 70,
+        "VII": 80,
+        "VIII": 80,
+        "IX": 80,
+        "X": 80,
+        "XI": 100
+    }
 }
